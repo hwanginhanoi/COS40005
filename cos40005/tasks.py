@@ -20,5 +20,9 @@ def insert_data_to_db(data):
     )
     property_data.save()
 
+@shared_task
+def crawl_urls_to_cache(data):
+
+
 def crawl_data():
     print()
