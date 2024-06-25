@@ -1,13 +1,41 @@
 from django.db import models
 
-from django.db import models
 
 class Domain(models.Model):
     title = models.CharField(max_length=255)
     domain = models.CharField(max_length=255)
+    pagination = models.CharField(max_length=255, default='')
+
+    title_classname = models.CharField(max_length=255, default='')
+    price_classname = models.CharField(max_length=255, default='')
+    address_classname = models.CharField(max_length=255, default='')
+
+    area_classname = models.CharField(max_length=255, default='')
+    area_classname_index = models.PositiveIntegerField(default=0)
+
+    bedroom_classname = models.CharField(max_length=255, default='')
+    bedroom_classname_index = models.PositiveIntegerField(default=0)
+
+    toilet_classname = models.CharField(max_length=255, default='')
+    toilet_classname_index = models.PositiveIntegerField(default=0)
+
+    publish_date_classname = models.CharField(max_length=255, default='')
+    publish_date_classname_index = models.PositiveIntegerField(default=0)
+
+    description_classname = models.CharField(max_length=255, default='')
 
     def __str__(self):
         return self.title
+
+
+class Cache(models.Model):
+    domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name='caches')
+    url = models.CharField(max_length=255)
+    status = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.url
+
 
 class Property(models.Model):
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name='properties')
