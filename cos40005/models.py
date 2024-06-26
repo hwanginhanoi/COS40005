@@ -10,17 +10,10 @@ class Domain(models.Model):
     price_classname = models.CharField(max_length=255, default='')
     address_classname = models.CharField(max_length=255, default='')
 
-    area_classname = models.CharField(max_length=255, default='')
-    area_classname_index = models.PositiveIntegerField(default=0)
-
-    bedroom_classname = models.CharField(max_length=255, default='')
-    bedroom_classname_index = models.PositiveIntegerField(default=0)
-
-    toilet_classname = models.CharField(max_length=255, default='')
-    toilet_classname_index = models.PositiveIntegerField(default=0)
-
-    publish_date_classname = models.CharField(max_length=255, default='')
-    publish_date_classname_index = models.PositiveIntegerField(default=0)
+    area_xpath = models.CharField(max_length=255, default='')
+    bedroom_xpath = models.CharField(max_length=255, default='')
+    toilet_xpath = models.CharField(max_length=255, default='')
+    publish_date_xpath = models.CharField(max_length=255, default='')
 
     description_classname = models.CharField(max_length=255, default='')
 
@@ -29,7 +22,7 @@ class Domain(models.Model):
 
 
 class Cache(models.Model):
-    domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name='caches')
+    title = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name='caches')
     url = models.CharField(max_length=255)
     status = models.BooleanField(default=False)
 

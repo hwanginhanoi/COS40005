@@ -11,17 +11,15 @@ options.add_argument("--window-size=1920,1200")  # Set the window size
 
 driver.get("https://batdongsan.com.vn/cho-thue-van-phong-duong-nguyen-du-phuong-nguyen-du/chinh-chu-cho-san-85-dt-tu-50-100-200m2-noi-that-pccc-pr40028370")
 
-
-
 title = driver.find_element(By.CLASS_NAME, 'js__pr-title')
 address = driver.find_element(By.CLASS_NAME, 'js__pr-address')
-items = driver.find_elements(By.CLASS_NAME, 're__pr-short-info-item')
+price = driver.find_element(By.XPATH, './/*[contains(concat(" ",normalize-space(@class)," ")," re__pr-short-info-item ")]/span[contains(normalize-space(),"Mức giá")]/following-sibling::span')
+area = driver.find_element(By.XPATH, './/*[contains(concat(" ",normalize-space(@class)," ")," re__pr-short-info-item ")]/span[contains(normalize-space(),"Diện tích")]/following-sibling::span')
 
-print(title.text)
-print(address.text)
-for item in items:
-    value_element = item.find_element(By.CLASS_NAME, 'value')
-    print(value_element.text)
+print("title: ", title.text)
+print("address: ", address.text)
+print("price: ", price.text)
+print("area: ", area.text)
 
 
 driver.quit()
