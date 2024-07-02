@@ -4,7 +4,6 @@ from django.db import models
 class Domain(models.Model):
     title = models.CharField(max_length=255)
     domain = models.CharField(max_length=255)
-    pagination = models.CharField(max_length=255, default='')
 
     title_classname = models.CharField(max_length=255, default='')
     price_classname = models.CharField(max_length=255, default='')
@@ -25,6 +24,7 @@ class Cache(models.Model):
     title = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name='caches')
     url = models.CharField(max_length=255)
     status = models.BooleanField(default=False)
+    visited = models.BooleanField(default=False)
 
     def __str__(self):
         return self.url

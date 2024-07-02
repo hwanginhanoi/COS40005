@@ -1,27 +1,46 @@
+import time
+from sys import stdout
+from django.core.management.base import BaseCommand
+from django.db import IntegrityError
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-
-driver = webdriver.Chrome()
-
-options = Options()
-options.headless = True  # Enable headless mode
-options.add_argument("--window-size=1920,1200")  # Set the window size
+from selenium.webdriver.chrome.options import Options
+from .models import Property, Domain, Cache
 
 
-driver.get("https://batdongsan.com.vn/cho-thue-van-phong-duong-nguyen-du-phuong-nguyen-du/chinh-chu-cho-san-85-dt-tu-50-100-200m2-noi-that-pccc-pr40028370")
+def handle(self, *args, **kwargs):
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    driver = webdriver.Chrome(options=chrome_options)
 
-title = driver.find_element(By.CLASS_NAME, 'js__pr-title')
-address = driver.find_element(By.CLASS_NAME, 'js__pr-address')
-price = driver.find_element(By.XPATH, './/*[contains(concat(" ",normalize-space(@class)," ")," re__pr-short-info-item ")]/span[contains(normalize-space(),"Mức giá")]/following-sibling::span')
-area = driver.find_element(By.XPATH, './/*[contains(concat(" ",normalize-space(@class)," ")," re__pr-short-info-item ")]/span[contains(normalize-space(),"Diện tích")]/following-sibling::span')
+    domain_name = "https://mogi.vn/mua-nha-dat"
+    domain, created = Domain.objects.get_or_create(name=domain_name)
+    self.crawl_domain(driver, domain, domain_name)
 
-print("title: ", title.text)
-print("address: ", address.text)
-print("price: ", price.text)
-print("area: ", area.text)
-
-
-driver.quit()
+    driver.quit()
 
 
+def crawl_domain(self, driver, domain, url):
+    if Cache.objects.filter(url=url, visited=True).exists():
+        return
+
+    driver.get(url)
+    time.sleep(2)
+
+    links = driver.find_elements(By.TAG_NAME, "a")
+    for link in links:
+        href = link.get_attribute("href")
+        if href and href.startswith(domain.name):
+            try:
+                Cache.objects.create(title=domain, url=href)
+            except IntegrityError:
+                continue
+
+    Cache.objects.filter(url=url).update(visited=True)
+
+    new_links = Cache.objects.filter(title=domain, visited=False)
+    for link in new_links:
+        self.crawl_domain(driver, domain, link.url)
+
+
+handle()
