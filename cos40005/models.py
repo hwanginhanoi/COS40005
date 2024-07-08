@@ -1,37 +1,100 @@
 from django.db import models
 
 
-from django.db import models
-
 class Domain(models.Model):
-    class TitleType(models.TextChoices):
-        XPATH = 'xpath', 'XPath'
-        CLASSNAME = 'classname', 'Classname'
-        REGEX = 'regex', 'Regex'
 
-    title = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
     domain = models.CharField(max_length=255)
 
-    title_classname = models.CharField(max_length=255, default='')
-    price_classname = models.CharField(max_length=255, default='')
-    address_classname = models.CharField(max_length=255, default='')
-
-    area_xpath = models.CharField(max_length=255, default='')
-    bedroom_xpath = models.CharField(max_length=255, default='')
-    toilet_xpath = models.CharField(max_length=255, default='')
-    publish_date_xpath = models.CharField(max_length=255, default='')
-
-    description_classname = models.CharField(max_length=255, default='')
+    class SelectorType(models.TextChoices):
+        XPATH = 'By.XPATH', 'XPath'
+        CLASSNAME = 'By.CLASS_NAME', 'Classname'
+        CSS_SELECTOR = 'By.CSS_SELECTOR', 'CSS Selector'
+        NAME = 'By.NAME', 'Name'
+        ID = 'By.ID', 'ID'
 
     title_type = models.CharField(
-        max_length=10,
-        choices=TitleType.choices,
-        default=TitleType.CLASSNAME
+        max_length=20,
+        choices=SelectorType.choices,
+        null=True,
+        blank=True
     )
     title_property = models.CharField(max_length=255, default='')
 
+    address_type = models.CharField(
+        max_length=20,
+        choices=SelectorType.choices,
+        null=True,
+        blank=True
+    )
+    address_property = models.CharField(max_length=255, default='')
+
+    price_type = models.CharField(
+        max_length=20,
+        choices=SelectorType.choices,
+        null=True,
+        blank=True
+    )
+    price_property = models.CharField(max_length=255, default='')
+
+    area_type = models.CharField(
+        max_length=20,
+        choices=SelectorType.choices,
+        null=True,
+        blank=True
+    )
+    area_property = models.CharField(max_length=255, default='')
+
+    floor_type = models.CharField(
+        max_length=20,
+        choices=SelectorType.choices,
+        null=True,
+        blank=True
+    )
+    floor_property = models.CharField(max_length=255, default='')
+
+    bedroom_type = models.CharField(
+        max_length=20,
+        choices=SelectorType.choices,
+        null=True,
+        blank=True
+    )
+    bedroom_property = models.CharField(max_length=255, default='')
+
+    toilet_type = models.CharField(
+        max_length=20,
+        choices=SelectorType.choices,
+        null=True,
+        blank=True
+    )
+    toilet_property = models.CharField(max_length=255, default='')
+
+    publish_date_type = models.CharField(
+        max_length=20,
+        choices=SelectorType.choices,
+        null=True,
+        blank=True
+    )
+    publish_date_property = models.CharField(max_length=255, default='')
+
+    contact_type = models.CharField(
+        max_length=20,
+        choices=SelectorType.choices,
+        null=True,
+        blank=True
+    )
+    contact_property = models.CharField(max_length=255, default='')
+
+    description_type = models.CharField(
+        max_length=20,
+        choices=SelectorType.choices,
+        null=True,
+        blank=True
+    )
+    description_property = models.CharField(max_length=255, default='')
+
     def __str__(self):
-        return self.title
+        return self.name
 
 class Cache(models.Model):
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name='caches')
@@ -47,12 +110,12 @@ class Property(models.Model):
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name='properties')
     title = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    area = models.DecimalField(max_digits=10, decimal_places=2)
-    floor = models.IntegerField()
-    bedroom = models.IntegerField()
-    toilet = models.IntegerField()
-    publish_date = models.DateField()
+    price = models.CharField(max_length=255)
+    area = models.CharField(max_length=255)
+    floor = models.CharField(max_length=255)
+    bedroom = models.CharField(max_length=255)
+    toilet = models.CharField(max_length=255)
+    publish_date = models.CharField(max_length=255)
     contact = models.CharField(max_length=255)
     description = models.TextField()
 
