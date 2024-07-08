@@ -1,7 +1,14 @@
 from django.db import models
 
 
+from django.db import models
+
 class Domain(models.Model):
+    class TitleType(models.TextChoices):
+        XPATH = 'xpath', 'XPath'
+        CLASSNAME = 'classname', 'Classname'
+        REGEX = 'regex', 'Regex'
+
     title = models.CharField(max_length=255)
     domain = models.CharField(max_length=255)
 
@@ -16,12 +23,18 @@ class Domain(models.Model):
 
     description_classname = models.CharField(max_length=255, default='')
 
+    title_type = models.CharField(
+        max_length=10,
+        choices=TitleType.choices,
+        default=TitleType.CLASSNAME
+    )
+    title_property = models.CharField(max_length=255, default='')
+
     def __str__(self):
         return self.title
 
-
 class Cache(models.Model):
-    title = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name='caches')
+    domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name='caches')
     url = models.CharField(max_length=255)
     status = models.BooleanField(default=False)
     visited = models.BooleanField(default=False)
