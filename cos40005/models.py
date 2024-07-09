@@ -4,7 +4,7 @@ from django.db import models
 class Domain(models.Model):
 
     name = models.CharField(max_length=255)
-    domain = models.CharField(max_length=255)
+    domain = models.CharField(max_length=255, unique=True)
 
     class SelectorType(models.TextChoices):
         XPATH = 'By.XPATH', 'XPath'
@@ -98,7 +98,7 @@ class Domain(models.Model):
 
 class Cache(models.Model):
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name='caches')
-    url = models.CharField(max_length=255)
+    url = models.CharField(max_length=255, unique=True)
     status = models.BooleanField(default=False)
     visited = models.BooleanField(default=False)
 
