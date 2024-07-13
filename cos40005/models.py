@@ -19,7 +19,7 @@ class Domain(models.Model):
         null=True,
         blank=True
     )
-    title_property = models.CharField(max_length=255, default='')
+    title_property = models.CharField(max_length=255, null=True, blank=True)
 
     address_type = models.CharField(
         max_length=20,
@@ -27,7 +27,7 @@ class Domain(models.Model):
         null=True,
         blank=True
     )
-    address_property = models.CharField(max_length=255, default='')
+    address_property = models.CharField(max_length=255, null=True, blank=True)
 
     price_type = models.CharField(
         max_length=20,
@@ -35,7 +35,7 @@ class Domain(models.Model):
         null=True,
         blank=True
     )
-    price_property = models.CharField(max_length=255, default='')
+    price_property = models.CharField(max_length=255, null=True, blank=True)
 
     area_type = models.CharField(
         max_length=20,
@@ -43,7 +43,7 @@ class Domain(models.Model):
         null=True,
         blank=True
     )
-    area_property = models.CharField(max_length=255, default='')
+    area_property = models.CharField(max_length=255, null=True, blank=True)
 
     floor_type = models.CharField(
         max_length=20,
@@ -51,7 +51,7 @@ class Domain(models.Model):
         null=True,
         blank=True
     )
-    floor_property = models.CharField(max_length=255, default='')
+    floor_property = models.CharField(max_length=255, null=True, blank=True)
 
     bedroom_type = models.CharField(
         max_length=20,
@@ -59,7 +59,7 @@ class Domain(models.Model):
         null=True,
         blank=True
     )
-    bedroom_property = models.CharField(max_length=255, default='')
+    bedroom_property = models.CharField(max_length=255, null=True, blank=True)
 
     toilet_type = models.CharField(
         max_length=20,
@@ -67,7 +67,7 @@ class Domain(models.Model):
         null=True,
         blank=True
     )
-    toilet_property = models.CharField(max_length=255, default='')
+    toilet_property = models.CharField(max_length=255, null=True, blank=True)
 
     publish_date_type = models.CharField(
         max_length=20,
@@ -75,7 +75,7 @@ class Domain(models.Model):
         null=True,
         blank=True
     )
-    publish_date_property = models.CharField(max_length=255, default='')
+    publish_date_property = models.CharField(max_length=255, null=True, blank=True)
 
     contact_type = models.CharField(
         max_length=20,
@@ -83,7 +83,7 @@ class Domain(models.Model):
         null=True,
         blank=True
     )
-    contact_property = models.CharField(max_length=255, default='')
+    contact_property = models.CharField(max_length=255, null=True, blank=True)
 
     description_type = models.CharField(
         max_length=20,
@@ -91,10 +91,11 @@ class Domain(models.Model):
         null=True,
         blank=True
     )
-    description_property = models.CharField(max_length=255, default='')
+    description_property = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return self.name
+
 
 class Cache(models.Model):
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name='caches')

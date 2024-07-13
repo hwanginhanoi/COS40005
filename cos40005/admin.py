@@ -63,6 +63,3 @@ class PropertyAdmin(admin.ModelAdmin):
     list_display = ('title', 'address', 'price', 'area', 'floor', 'bedroom', 'toilet', 'publish_date', 'contact')
     list_filter = ('domain', 'publish_date')
     search_fields = ('title', 'address', 'contact')
-
-
-

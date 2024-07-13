@@ -2,174 +2,157 @@ from celery import shared_task
 from .models import Property, Domain, Cache
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from urllib.parse import urlparse, urljoin
 import time
 
-@shared_task
-def insert_data_to_db(data):
-    print(data)
-    domain, created = Domain.objects.get_or_create(title=data['domain'])
-    property_data = Property(
-        domain=domain,
-        title=data['title'],
-        address=data['address'],
-        price=data['price'],
-        area=data['area'],
-        floor=data['floor'],
-        bedroom=data['bedroom'],
-        toilet=data['toilet'],
-        publish_date=data['publish_date'],
-        contact=data['contact'],
-        description=data['description']
-    )
-    property_data.save()
 
 @shared_task
 def crawl_domain():
-    driver = webdriver.Chrome()
-    domain = None
     domains = Domain.objects.all()
-    if len(domains) > 0:
-        domain = domains[0]
-    else:
-        domain = Domain(name = 'Mogi', domain = "https://mogi.vn/")
-        domain.save()
-
-    url = domain.domain
+    for domain in domains:
+        try:
+            cache = Cache.objects.get(url=domain.domain)
+            cache.domain = domain
+            cache.status = False
+            cache.visited = False
+            cache.save()
+        except Cache.DoesNotExist:
+            Cache.objects.create(domain=domain, url=domain.domain, status=False, visited=False)
 
     not_visited = Cache.objects.filter(visited=False)
-
     if not_visited and len(not_visited) > 0:
-        not_visited = not_visited[0]
-
-        try:
-            crawl_content(domain, not_visited.url)
-        except Exception as e:
-            print(e)
-
-        not_visited.visited = True
-        not_visited.save()
-    else:
+        driver = webdriver.Chrome()
         options = Options()
-        options.headless = True  # Enable headless mode
-        options.add_argument("--window-size=1920,1200")  # Set the window size
-        if Cache.objects.filter(url=url, visited=False).exists():
-            return
-        driver.get(url)
-        time.sleep(2)
+        options.headless = True
+        for cache in not_visited:
+            try:
+                driver.get(cache.url)
+                time.sleep(2)
+                links = driver.find_elements(By.TAG_NAME, "a")
+                for link in links:
+                    href = link.get_attribute("href")
+                    if href and href.startswith(cache.domain.domain):
+                        try:
+                            new_cache = Cache(domain=cache.domain, url=href, status=False, visited=False)
+                            new_cache.save()
+                        except Exception as e:
+                            print(f"Error saving cache for {href}: {e}. Cache might be existed in the database")
+                cache.visited = True
+                cache.save()
+            except Exception as ex:
+                print(f"Error processing {cache.url}: {ex}")
+                cache.visited = True
+                cache.save()
+                continue
+        driver.quit()
+        print("Task completed")
 
-        links = driver.find_elements(By.TAG_NAME, "a")
-        for link in links:
-            href = link.get_attribute("href")
-            if href and href.startswith(url):
-                try:
-                    print(href)
-                    cache = Cache(domain = domain, url = href)
-                    cache.save()
-                except Exception as e:
-                    print(e)
+
+@shared_task
+def crawl_property(domain_name):
+    domain = Domain.objects.get(name=domain_name)
+    caches = Cache.objects.filter(domain=domain, status=False)
+
+    title_type = domain.title_type
+    title_property = domain.title_property
+
+    address_type = domain.address_type
+    address_property = domain.address_property
+
+    price_type = domain.price_type
+    price_property = domain.price_property
+
+    area_type = domain.area_type
+    area_property = domain.area_property
+
+    floor_type = domain.floor_type
+    floor_property = domain.floor_property
+
+    bedroom_type = domain.bedroom_type
+    bedroom_property = domain.bedroom_property
+
+    toilet_type = domain.tolet_type
+    toilet_property = domain.tolet_property
+
+    contact_type = domain.contact_type
+    contact_property = domain.contact_property
+
+    description_type = domain.description_type
+    description_property = domain.description_property
+
+    for cache in caches:
+        title = None
+        address = None
+        price = None
+        area = None
+        floor = None
+        bedroom = None
+        toilet = None
+        publish_date = None
+        contact = None
+        description = None
+
+        driver = webdriver.Chrome()
+        options = Options()
+        options.headless = True
+
+        if title_type and title_property:
+            try:
+                title = driver.find_element(title_type, title_property)
+            except:
+                pass
+        if address_type and address_property:
+            try:
+                address = driver.find_element(address_type, address_property)
+            except:
+                pass
+        if price_type and price_property:
+            try:
+                price = driver.find_element(price_type, price_property)
+            except:
+                pass
+        if area_type and area_property:
+            try:
+                area = driver.find_element(area_type, area_property)
+            except:
+                pass
+        if floor_type and floor_property:
+            try:
+                floor = driver.find_element(floor_type, floor_property)
+            except:
+                pass
+        if bedroom_type and bedroom_property:
+            try:
+                bedroom = driver.find_element(bedroom_type, bedroom_property)
+            except:
+                pass
+        if toilet_type and toilet_property:
+            try:
+                toilet = driver.find_element(toilet_type, toilet_property)
+            except:
+                pass
+        if publish_date and publish_date:
+            try:
+                publish_date = driver.find_element(publish_date, publish_date)
+            except:
+                pass
+        if contact_type and contact_property:
+            try:
+                contact = driver.find_element(contact_type, contact_property)
+            except:
+                pass
+        if description_type and description_property:
+            try:
+                description = driver.find_element(description_type, description_property)
+            except:
+                pass
+
+        property = Property(domain=domain, title=title, address=address, price=price, area=area, floor=floor,
+                            bedroom=bedroom, toilet=toilet, publish_date=publish_date, contact=contact,
+                            description=description)
+        property.save()
+        cache.visited = True
+        cache.save()
 
         driver.quit()
-
-def crawl_content(domain, url):
-    driver = webdriver.Chrome()
-    options = Options()
-    options.headless = True  # Enable headless mode
-    options.add_argument("--window-size=1920,1200")  # Set the window size
-    driver.get(url)
-    time.sleep(2)
-
-    title= ''
-    address = ''
-    price = ''
-    area = ''
-    floor = ''
-    bedroom = ''
-    toilet = ''
-    publish_date = ''
-    contact = ''
-    description = ''
-
-    # if domain.title_type and domain.title_property:
-    try:
-        title = driver.find_element('css selector', '.main-info .title h1')
-        if title:
-            title = title.text
-    except:
-        pass
-    try:
-        address = driver.find_element('css selector', '.main-info .address')
-        if address:
-            address = address.text
-    except:
-        pass
-    try:
-        price = driver.find_element('css selector', '.main-info .price')
-        if price:
-            price = price.text
-    except:
-        pass
-    try:
-        area = driver.find_element('xpath', './/*[contains(concat(" ",normalize-space(@class)," ")," info-attr ")][contains(concat(" ",normalize-space(@class)," ")," clearfix ")]/span[contains(normalize-space(),"Diện tích đất")]/following-sibling::span')
-        if area:
-            area = area.text
-    except:
-        pass
-    # floor = driver.find_element('css selector', '.main-info .title h1').text
-    try:
-        bedroom = driver.find_element('css selector', './/*[contains(concat(" ",normalize-space(@class)," ")," info-attr ")][contains(concat(" ",normalize-space(@class)," ")," clearfix ")]/span[contains(normalize-space(),"Phòng ngủ")]/following-sibling::span')
-        if bedroom:
-            bedroom = bedroom.text
-    except:
-        pass
-    try:
-        toilet = driver.find_element('css selector', './/*[contains(concat(" ",normalize-space(@class)," ")," info-attr ")][contains(concat(" ",normalize-space(@class)," ")," clearfix ")]/span[contains(normalize-space(),"Nhà tắm")]/following-sibling::span')
-        if toilet:
-            toilet = toilet.text
-    except:
-        pass
-    # publish_date = driver.find_element('css selector', '.main-info .title h1').text
-    try:
-        show = driver.find_element('css selector', '.showphonetext')
-        if show:
-            show.click()
-    except:
-        pass
-    try:
-        contact = driver.find_element('css selector', '.showphonetext ~ span')
-        if contact:
-            contact = contact.text
-    except:
-        pass
-    try:
-        description = driver.find_element('css selector', '.info-content-body')
-        if description:
-            description = description.text
-    except:
-        pass
-
-    if title:
-        property = Property(domain=domain, title=title, address=address, price=price, area=area, floor=floor, bedroom=bedroom, toilet=toilet, publish_date=publish_date, contact=contact, description=description)
-        property.save()
-
-    links = driver.find_elements(By.TAG_NAME, "a")
-    for link in links:
-        href = link.get_attribute("href")
-        if href and href.startswith(domain.domain):
-            try:
-                print(href)
-                cache = Cache(domain=domain, url=href)
-                cache.save()
-            except Exception as e:
-                print(e)
-
-    driver.quit()
-
-
-
-
 
