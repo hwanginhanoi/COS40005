@@ -59,6 +59,6 @@ class CacheAdmin(admin.ModelAdmin):
 
 @admin.register(Property)
 class PropertyAdmin(admin.ModelAdmin):
-    list_display = ('title', 'address', 'price', 'area', 'floor', 'bedroom', 'toilet', 'publish_date', 'contact')
+    list_display = ('title', 'address', 'price', 'area', 'floor', 'bedroom', 'toilet', 'publish_date', 'contact', 'description')
     list_filter = ('domain', 'publish_date')
     search_fields = ('title', 'address', 'contact')

@@ -1,4 +1,5 @@
 from django.db import models
+from selenium.webdriver.common.by import By
 
 
 class Domain(models.Model):
@@ -7,11 +8,11 @@ class Domain(models.Model):
     domain = models.CharField(max_length=255, unique=True)
 
     class SelectorType(models.TextChoices):
-        XPATH = 'By.XPATH', 'XPath'
-        CLASSNAME = 'By.CLASS_NAME', 'Classname'
-        CSS_SELECTOR = 'By.CSS_SELECTOR', 'CSS Selector'
-        NAME = 'By.NAME', 'Name'
-        ID = 'By.ID', 'ID'
+        XPATH = By.XPATH, 'XPath'
+        CLASSNAME = By.CLASS_NAME, 'Classname'
+        CSS_SELECTOR = By.CSS_SELECTOR, 'CSS Selector'
+        NAME = By.NAME, 'Name'
+        ID = By.ID, 'ID'
 
     title_type = models.CharField(
         max_length=20,
@@ -109,16 +110,17 @@ class Cache(models.Model):
 
 class Property(models.Model):
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name='properties')
-    title = models.CharField(max_length=255)
-    address = models.CharField(max_length=255)
-    price = models.CharField(max_length=255)
-    area = models.CharField(max_length=255)
-    floor = models.CharField(max_length=255)
-    bedroom = models.CharField(max_length=255)
-    toilet = models.CharField(max_length=255)
-    publish_date = models.CharField(max_length=255)
-    contact = models.CharField(max_length=255)
-    description = models.TextField()
+    title = models.CharField(max_length=2048)
+    # url = models.CharField(max_length=2048)
+    address = models.CharField(max_length=2048)
+    price = models.CharField(max_length=2048)
+    area = models.CharField(max_length=2048, null=True, blank=True)
+    floor = models.CharField(max_length=2048, null=True, blank=True)
+    bedroom = models.CharField(max_length=2048, null=True, blank=True)
+    toilet = models.CharField(max_length=2048, null=True, blank=True)
+    publish_date = models.CharField(max_length=2048, null=True, blank=True)
+    contact = models.CharField(max_length=2048, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.title

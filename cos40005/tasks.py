@@ -4,6 +4,12 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 import time
+import redis
+import json
+import requests
+
+
+r = redis.Redis(host='localhost', port=6379)
 
 
 @shared_task
@@ -26,7 +32,9 @@ def crawl_domain():
         options.add_argument("--start-maximized")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--headless=new")
+        options.add_argument("--headless")
+        options.add_argument('--ignore-certificate-errors')
+        options.add_argument('--ignore-ssl-errors')
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option('useAutomationExtension', False)
         for cache in not_visited:
@@ -76,8 +84,8 @@ def crawl_property(domain_name):
     bedroom_type = domain.bedroom_type
     bedroom_property = domain.bedroom_property
 
-    toilet_type = domain.tolet_type
-    toilet_property = domain.tolet_property
+    toilet_type = domain.toilet_type
+    toilet_property = domain.toilet_property
 
     contact_type = domain.contact_type
     contact_property = domain.contact_property
@@ -91,10 +99,13 @@ def crawl_property(domain_name):
         options.add_argument("--start-maximized")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--headless=new")
+        options.add_argument("--headless")
+        options.add_argument('--ignore-certificate-errors')
+        options.add_argument('--ignore-ssl-errors')
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option('useAutomationExtension', False)
         for cache in caches:
+            driver.get(cache.url)
             title = None
             address = None
             price = None
@@ -108,61 +119,99 @@ def crawl_property(domain_name):
 
             if title_type and title_property:
                 try:
-                    title = driver.find_element(title_type, title_property)
+                    title = driver.find_element(title_type, title_property).text
                 except:
                     pass
             if address_type and address_property:
                 try:
-                    address = driver.find_element(address_type, address_property)
+                    address = driver.find_element(address_type, address_property).text
                 except:
                     pass
             if price_type and price_property:
                 try:
-                    price = driver.find_element(price_type, price_property)
+                    price = driver.find_element(price_type, price_property).text
                 except:
                     pass
             if area_type and area_property:
                 try:
-                    area = driver.find_element(area_type, area_property)
+                    area = driver.find_element(area_type, area_property).text
                 except:
                     pass
             if floor_type and floor_property:
                 try:
-                    floor = driver.find_element(floor_type, floor_property)
+                    floor = driver.find_element(floor_type, floor_property).text
                 except:
                     pass
             if bedroom_type and bedroom_property:
                 try:
-                    bedroom = driver.find_element(bedroom_type, bedroom_property)
+                    bedroom = driver.find_element(bedroom_type, bedroom_property).text
                 except:
                     pass
             if toilet_type and toilet_property:
                 try:
-                    toilet = driver.find_element(toilet_type, toilet_property)
+                    toilet = driver.find_element(toilet_type, toilet_property).text
                 except:
                     pass
             if publish_date and publish_date:
                 try:
-                    publish_date = driver.find_element(publish_date, publish_date)
+                    publish_date = driver.find_element(publish_date, publish_date).text
                 except:
                     pass
             if contact_type and contact_property:
                 try:
-                    contact = driver.find_element(contact_type, contact_property)
+                    contact = driver.find_element(contact_type, contact_property).text
                 except:
                     pass
             if description_type and description_property:
                 try:
-                    description = driver.find_element(description_type, description_property)
+                    description = driver.find_element(description_type, description_property).text
                 except:
                     pass
 
-            property = Property(domain=domain, title=title, address=address, price=price, area=area, floor=floor,
-                                bedroom=bedroom, toilet=toilet, publish_date=publish_date, contact=contact,
-                                description=description)
-            property.save()
-            cache.visited = True
+            if title and address and price:
+                property = Property(domain=domain, title=title, address=address, price=price, area=area, floor=floor,
+                                    bedroom=bedroom, toilet=toilet, publish_date=publish_date, contact=contact,
+                                    description=description)
+                property.save()
+                last = Property.objects.last()
+                if last.id and last.description:
+                    toExtract = {
+                        'id': last.id,
+                        'description': last.description
+                    }
+                    r.rpush('extract_queue', json.dumps(toExtract))
+
+            cache.status = True
             cache.save()
 
         driver.quit()
 
+@shared_task
+def call_api_extract():
+    toExtract = r.lpop('extract_queue')
+    toExtract = json.loads(toExtract)
+    res = requests.get('http://localhost:9966?raw_data=' + toExtract['description'])
+    res = res.json()
+    property = Property.objects.get(id=toExtract['id'])
+
+    try:
+        if not property.address and res['address']['result']:
+            property.address = res['address']['result']
+        if not property.area and res['real_area']['result']:
+            property.area = res['real_area']['result']
+        if not property.floor and res['number_of_floors']['result']:
+            property.floor = res['number_of_floors']['result']
+        if not property.bedroom and res['number_of_bedrooms']['result']:
+            property.bedroom = res['number_of_bedrooms']['result']
+        if not property.contact and res['contact_number']['result']:
+            property.contact = res['contact_number']['result']
+        if not property.toilet and res['number_of_toilets']['result']:
+            property.toilet = res['number_of_toilets']['result']
+        if not property.price and res['price']['result']:
+            property.price = res['price']['result']
+        if not property.publish_date and res['publish_date']['result']:
+            property.publish_date = res['publish_date']['result']
+    except Exception as e:
+        print(e)
+
+    property.save()
