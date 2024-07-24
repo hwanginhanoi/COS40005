@@ -63,6 +63,7 @@ def crawl_domain():
 
 @shared_task
 def crawl_property(domain_name):
+    print('domainnnnnn', domain_name)
     domain = Domain.objects.get(name=domain_name)
     caches = Cache.objects.filter(domain=domain, status=False)
 
@@ -186,32 +187,36 @@ def crawl_property(domain_name):
 
         driver.quit()
 
+
 @shared_task
 def call_api_extract():
-    toExtract = r.lpop('extract_queue')
-    toExtract = json.loads(toExtract)
-    res = requests.get('http://localhost:9966?raw_data=' + toExtract['description'])
-    res = res.json()
-    property = Property.objects.get(id=toExtract['id'])
-
     try:
-        if not property.address and res['address']['result']:
-            property.address = res['address']['result']
-        if not property.area and res['real_area']['result']:
-            property.area = res['real_area']['result']
-        if not property.floor and res['number_of_floors']['result']:
-            property.floor = res['number_of_floors']['result']
-        if not property.bedroom and res['number_of_bedrooms']['result']:
-            property.bedroom = res['number_of_bedrooms']['result']
-        if not property.contact and res['contact_number']['result']:
-            property.contact = res['contact_number']['result']
-        if not property.toilet and res['number_of_toilets']['result']:
-            property.toilet = res['number_of_toilets']['result']
-        if not property.price and res['price']['result']:
-            property.price = res['price']['result']
-        if not property.publish_date and res['publish_date']['result']:
-            property.publish_date = res['publish_date']['result']
-    except Exception as e:
-        print(e)
+        toExtract = r.lpop('extract_queue')
+        toExtract = json.loads(toExtract)
+        res = requests.get('http://localhost:9966?raw_data=' + toExtract['description'])
+        res = res.json()
+        property = Property.objects.get(id=toExtract['id'])
 
-    property.save()
+        try:
+            if not property.address and res['address']['result']:
+                property.address = res['address']['result']
+            if not property.area and res['real_area']['result']:
+                property.area = res['real_area']['result']
+            if not property.floor and res['number_of_floors']['result']:
+                property.floor = res['number_of_floors']['result']
+            if not property.bedroom and res['number_of_bedrooms']['result']:
+                property.bedroom = res['number_of_bedrooms']['result']
+            if not property.contact and res['contact_number']['result']:
+                property.contact = res['contact_number']['result']
+            if not property.toilet and res['number_of_toilets']['result']:
+                property.toilet = res['number_of_toilets']['result']
+            if not property.price and res['price']['result']:
+                property.price = res['price']['result']
+            if not property.publish_date and res['publish_date']['result']:
+                property.publish_date = res['publish_date']['result']
+        except Exception as e:
+            print(e)
+
+        property.save()
+    except Exception as ex:
+        print(ex)
