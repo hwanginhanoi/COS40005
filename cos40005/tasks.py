@@ -27,7 +27,6 @@ def crawl_domain():
 
     not_visited = Cache.objects.filter(visited=False)
     if not_visited and len(not_visited) > 0:
-        driver = webdriver.Chrome()
         options = Options()
         options.add_argument("--start-maximized")
         options.add_argument("--no-sandbox")
@@ -37,6 +36,7 @@ def crawl_domain():
         options.add_argument('--ignore-ssl-errors')
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option('useAutomationExtension', False)
+        driver = webdriver.Chrome(options=options)
         for cache in not_visited:
             try:
                 driver.get(cache.url)
@@ -95,7 +95,6 @@ def crawl_property(domain_name):
     description_property = domain.description_property
 
     if caches and len(caches) > 0:
-        driver = webdriver.Chrome()
         options = Options()
         options.add_argument("--start-maximized")
         options.add_argument("--no-sandbox")
@@ -105,6 +104,7 @@ def crawl_property(domain_name):
         options.add_argument('--ignore-ssl-errors')
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option('useAutomationExtension', False)
+        driver = webdriver.Chrome(options=options)
         for cache in caches:
             driver.get(cache.url)
             title = None
