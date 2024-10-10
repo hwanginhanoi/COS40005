@@ -14,16 +14,17 @@ r = redis.Redis(host='localhost', port=6379)
 
 @shared_task
 def crawl_domain():
-    domains = Domain.objects.all()
-    for domain in domains:
-        try:
-            cache = Cache.objects.get(url=domain.domain)
-            cache.domain = domain
-            cache.status = False
-            cache.visited = False
-            cache.save()
-        except Cache.DoesNotExist:
-            Cache.objects.create(domain=domain, url=domain.domain, status=False, visited=False)
+    domain = Domain.objects.get(enable=True)
+    # print(domains)
+    # for domain in domains:
+    try:
+        cache = Cache.objects.get(url=domain.domain)
+        cache.domain = domain
+        cache.status = False
+        cache.visited = False
+        cache.save()
+    except Cache.DoesNotExist:
+        Cache.objects.create(domain=domain, url=domain.domain, status=False, visited=False)
 
     not_visited = Cache.objects.filter(visited=False)
     if not_visited and len(not_visited) > 0:
@@ -44,7 +45,7 @@ def crawl_domain():
                 links = driver.find_elements(By.TAG_NAME, "a")
                 for link in links:
                     href = link.get_attribute("href")
-                    if href and href.startswith(cache.domain.domain):
+                    if href and (href.startswith(cache.domain.domain) or href.startswith('/')):
                         try:
                             new_cache = Cache(domain=cache.domain, url=href, status=False, visited=False)
                             new_cache.save()
@@ -62,130 +63,134 @@ def crawl_domain():
 
 
 @shared_task
-def crawl_property(domain_name):
-    print('domainnnnnn', domain_name)
-    domain = Domain.objects.get(name=domain_name)
-    caches = Cache.objects.filter(domain=domain, status=False)
+def crawl_property(domain_names):
+    domain_names = domain_names.split(',')
+    for domain_name in domain_names:
+        domain = Domain.objects.get(name=domain_name)
+        caches = Cache.objects.filter(domain=domain, status=False)
 
-    title_type = domain.title_type
-    title_property = domain.title_property
+        title_type = domain.title_type
+        title_property = domain.title_property
 
-    address_type = domain.address_type
-    address_property = domain.address_property
+        address_type = domain.address_type
+        address_property = domain.address_property
 
-    price_type = domain.price_type
-    price_property = domain.price_property
+        price_type = domain.price_type
+        price_property = domain.price_property
 
-    area_type = domain.area_type
-    area_property = domain.area_property
+        area_type = domain.area_type
+        area_property = domain.area_property
 
-    floor_type = domain.floor_type
-    floor_property = domain.floor_property
+        floor_type = domain.floor_type
+        floor_property = domain.floor_property
 
-    bedroom_type = domain.bedroom_type
-    bedroom_property = domain.bedroom_property
+        bedroom_type = domain.bedroom_type
+        bedroom_property = domain.bedroom_property
 
-    toilet_type = domain.toilet_type
-    toilet_property = domain.toilet_property
+        toilet_type = domain.toilet_type
+        toilet_property = domain.toilet_property
 
-    contact_type = domain.contact_type
-    contact_property = domain.contact_property
+        contact_type = domain.contact_type
+        contact_property = domain.contact_property
 
-    description_type = domain.description_type
-    description_property = domain.description_property
+        description_type = domain.description_type
+        description_property = domain.description_property
 
-    if caches and len(caches) > 0:
-        options = Options()
-        options.add_argument("--start-maximized")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--headless")
-        options.add_argument('--ignore-certificate-errors')
-        options.add_argument('--ignore-ssl-errors')
-        options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        options.add_experimental_option('useAutomationExtension', False)
-        driver = webdriver.Chrome(options=options)
-        for cache in caches:
-            driver.get(cache.url)
-            title = None
-            address = None
-            price = None
-            area = None
-            floor = None
-            bedroom = None
-            toilet = None
-            publish_date = None
-            contact = None
-            description = None
+        if caches and len(caches) > 0:
+            options = Options()
+            options.add_argument("--start-maximized")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--headless")
+            options.add_argument('--ignore-certificate-errors')
+            options.add_argument('--ignore-ssl-errors')
+            options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            options.add_experimental_option('useAutomationExtension', False)
+            driver = webdriver.Chrome(options=options)
+            for cache in caches:
+                driver.get(cache.url)
+                title = None
+                address = None
+                price = None
+                area = None
+                floor = None
+                bedroom = None
+                toilet = None
+                publish_date = None
+                contact = None
+                description = None
 
-            if title_type and title_property:
+                if title_type and title_property:
+                    try:
+                        title = driver.find_element(title_type, title_property).text
+                    except:
+                        pass
+                if address_type and address_property:
+                    try:
+                        address = driver.find_element(address_type, address_property).text
+                    except:
+                        pass
+                if price_type and price_property:
+                    try:
+                        price = driver.find_element(price_type, price_property).text
+                    except:
+                        pass
+                if area_type and area_property:
+                    try:
+                        area = driver.find_element(area_type, area_property).text
+                    except:
+                        pass
+                if floor_type and floor_property:
+                    try:
+                        floor = driver.find_element(floor_type, floor_property).text
+                    except:
+                        pass
+                if bedroom_type and bedroom_property:
+                    try:
+                        bedroom = driver.find_element(bedroom_type, bedroom_property).text
+                    except:
+                        pass
+                if toilet_type and toilet_property:
+                    try:
+                        toilet = driver.find_element(toilet_type, toilet_property).text
+                    except:
+                        pass
+                if publish_date and publish_date:
+                    try:
+                        publish_date = driver.find_element(publish_date, publish_date).text
+                    except:
+                        pass
+                if contact_type and contact_property:
+                    try:
+                        contact = driver.find_element(contact_type, contact_property).text
+                    except:
+                        pass
+                if description_type and description_property:
+                    try:
+                        description = driver.find_element(description_type, description_property).text
+                    except:
+                        pass
                 try:
-                    title = driver.find_element(title_type, title_property).text
-                except:
-                    pass
-            if address_type and address_property:
-                try:
-                    address = driver.find_element(address_type, address_property).text
-                except:
-                    pass
-            if price_type and price_property:
-                try:
-                    price = driver.find_element(price_type, price_property).text
-                except:
-                    pass
-            if area_type and area_property:
-                try:
-                    area = driver.find_element(area_type, area_property).text
-                except:
-                    pass
-            if floor_type and floor_property:
-                try:
-                    floor = driver.find_element(floor_type, floor_property).text
-                except:
-                    pass
-            if bedroom_type and bedroom_property:
-                try:
-                    bedroom = driver.find_element(bedroom_type, bedroom_property).text
-                except:
-                    pass
-            if toilet_type and toilet_property:
-                try:
-                    toilet = driver.find_element(toilet_type, toilet_property).text
-                except:
-                    pass
-            if publish_date and publish_date:
-                try:
-                    publish_date = driver.find_element(publish_date, publish_date).text
-                except:
-                    pass
-            if contact_type and contact_property:
-                try:
-                    contact = driver.find_element(contact_type, contact_property).text
-                except:
-                    pass
-            if description_type and description_property:
-                try:
-                    description = driver.find_element(description_type, description_property).text
-                except:
-                    pass
+                    print(title,address,price)
+                    if title:
+                        property = Property(domain=domain, title=title, address=address, price=price, area=area, floor=floor,
+                                            bedroom=bedroom, toilet=toilet, publish_date=publish_date, contact=contact,
+                                            description=description)
 
-            if title and address and price:
-                property = Property(domain=domain, title=title, address=address, price=price, area=area, floor=floor,
-                                    bedroom=bedroom, toilet=toilet, publish_date=publish_date, contact=contact,
-                                    description=description)
-                property.save()
-                last = Property.objects.last()
-                if last.id and last.description:
-                    toExtract = {
-                        'id': last.id,
-                        'description': last.description
-                    }
-                    r.rpush('extract_queue', json.dumps(toExtract))
+                        property.save()
+                        last = Property.objects.last()
+                        if last.id and last.description:
+                            toExtract = {
+                                'id': last.id,
+                                'description': last.description
+                            }
+                            r.rpush('extract_queue', json.dumps(toExtract))
+                    cache.status = True
+                    cache.save()
+                except Exception as e:
+                    print(e)
 
-            cache.status = True
-            cache.save()
-
-        driver.quit()
+            driver.quit()
 
 
 @shared_task

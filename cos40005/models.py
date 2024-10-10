@@ -6,6 +6,7 @@ class Domain(models.Model):
 
     name = models.CharField(max_length=255)
     domain = models.CharField(max_length=255, unique=True)
+    enable = models.BooleanField(default=False)
 
     class SelectorType(models.TextChoices):
         XPATH = By.XPATH, 'XPath'
@@ -112,7 +113,7 @@ class Property(models.Model):
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name='properties')
     title = models.CharField(max_length=2048)
     # url = models.CharField(max_length=2048)
-    address = models.CharField(max_length=2048)
+    address = models.CharField(max_length=2048, null=True, blank=True)
     price = models.CharField(max_length=2048)
     area = models.CharField(max_length=2048, null=True, blank=True)
     floor = models.CharField(max_length=2048, null=True, blank=True)
@@ -120,7 +121,25 @@ class Property(models.Model):
     toilet = models.CharField(max_length=2048, null=True, blank=True)
     publish_date = models.CharField(max_length=2048, null=True, blank=True)
     contact = models.CharField(max_length=2048, null=True, blank=True)
-    description = models.TextField(null=True, blank=True)
+    description = models.TextField()
+
+    def __str__(self):
+        return self.title
+
+
+class ExtractedProperty(models.Model):
+    domain = models.ForeignKey(Domain, on_delete=models.CASCADE, related_name='extracted_properties')
+    title = models.CharField(max_length=2048)
+    # url = models.CharField(max_length=2048)
+    address = models.CharField(max_length=2048, null=True, blank=True)
+    price = models.CharField(max_length=2048)
+    area = models.CharField(max_length=2048, null=True, blank=True)
+    floor = models.CharField(max_length=2048, null=True, blank=True)
+    bedroom = models.CharField(max_length=2048, null=True, blank=True)
+    toilet = models.CharField(max_length=2048, null=True, blank=True)
+    publish_date = models.CharField(max_length=2048, null=True, blank=True)
+    contact = models.CharField(max_length=2048, null=True, blank=True)
+    description = models.TextField()
 
     def __str__(self):
         return self.title

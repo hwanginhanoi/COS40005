@@ -14,7 +14,7 @@ class DomainAdmin(admin.ModelAdmin):
     ]
     fieldsets = (
         (None, {
-            'fields': ('name', 'domain')
+            'fields': ('name', 'domain', 'enable')
         }),
         ('Title Information', {
             'fields': ('title_type', 'title_property')
