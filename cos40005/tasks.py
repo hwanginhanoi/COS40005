@@ -67,7 +67,7 @@ def crawl_property(domain_names):
     domain_names = domain_names.split(',')
     for domain_name in domain_names:
         domain = Domain.objects.get(name=domain_name)
-        caches = Cache.objects.filter(domain=domain, status=False)
+        caches = Cache.objects.all().filter(domain=domain, status=False)
 
         title_type = domain.title_type
         title_property = domain.title_property
@@ -220,8 +220,8 @@ def call_api_extract():
             if not property.publish_date and res['publish_date']['result']:
                 property.publish_date = res['publish_date']['result']
         except Exception as e:
-            print(e)
+            print('Form not correct', e)
 
         property.save()
     except Exception as ex:
-        print(ex)
+        print('Extract failed', ex)

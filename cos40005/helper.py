@@ -153,7 +153,7 @@ def create_data():
     f.close()
     conn.close()
 
-create_data()
+# create_data()
 
 __all__ = ['normalise_price', 'normalise_address', 'normalise_area']
 
