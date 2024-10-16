@@ -64,7 +64,7 @@ def crawl_domain_mogi_hn():
     base_url = "https://mogi.vn"
 
     driver = get_chrome_driver()
-    page = 1
+    page = 10000
     while True:
         url = url_template.format(page=page)
 
