@@ -125,7 +125,12 @@ def crawl_property(domain_names):
     domain_names = domain_names.split(',')
     for domain_name in domain_names:
         domain = Domain.objects.get(name=domain_name)
-        caches = Cache.objects.all().filter(domain=domain, status=False)
+
+        total_caches = Cache.objects.filter(domain=domain, status=False).count()
+        middle_index = total_caches // 2  # Integer division to get the middle index
+        # Get records from middle to end using offset
+        caches = Cache.objects.filter(domain=domain, status=False)[middle_index:]
+
 
         title_type = domain.title_type
         title_property = domain.title_property
@@ -259,7 +264,14 @@ def call_api_extract():
         res = requests.get('http://localhost:9966?raw_data=' + toExtract['description'])
         res = res.json()
         property = Property.objects.get(id=toExtract['id'])
-
+        print(f"Property ID: {property.id}")
+        print(f"Address: {property.address}")
+        print(f"Area: {property.area} sq ft (or m²)")  # Adjust unit based on your location
+        print(f"Floor: {property.floor}")
+        print(f"Bedrooms: {property.bedroom}")
+        print(f"Contact: {property.contact}")
+        print(f"Bathrooms: {property.toilet} (assuming 'toilet' refers to bathrooms)")
+        print(f"Price: ${property.price}")  # Adjust currency symbol if needed
         try:
             if not property.address and res['address']['result']:
                 property.address = res['address']['result']
@@ -280,6 +292,15 @@ def call_api_extract():
         except Exception as e:
             print('Form not correct', e)
 
+        print("--------------------------------done")
+        print(f"Property ID: {property.id}")
+        print(f"Address: {property.address}")
+        print(f"Area: {property.area} sq ft (or m²)")  # Adjust unit based on your location
+        print(f"Floor: {property.floor}")
+        print(f"Bedrooms: {property.bedroom}")
+        print(f"Contact: {property.contact}")
+        print(f"Bathrooms: {property.toilet} (assuming 'toilet' refers to bathrooms)")
+        print(f"Price: ${property.price}")  # Adjust currency symbol if needed
         property.save()
     except Exception as ex:
         print('Extract failed', ex)
