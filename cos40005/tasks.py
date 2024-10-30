@@ -60,12 +60,15 @@ def crawl_domain():
 def crawl_domain_mogi_hn():
     domain = Domain.objects.get(name="mogi")
 
-    url_template = "https://mogi.vn/ho-chi-minh/mua-nha-dat?cp={page}"
+    url_template = "https://mogi.vn/ha-noi/mua-nha-dat?cp={page}"
     base_url = "https://mogi.vn"
 
     driver = get_chrome_driver()
-    page = 1
+    page = 0 #thay start number cua m vao day
     while True:
+        print("Current page number: ", page)
+        if page > 1000: #lay start_page + 1k, thay vao day
+            break
         url = url_template.format(page=page)
 
         driver.get(url)
@@ -85,6 +88,7 @@ def crawl_domain_mogi_hn():
                     print(f"Error saving cache for {href}: {e}. Cache might be existed in the database")
         page += 1
 
+
     driver.quit()
 
 
@@ -96,7 +100,7 @@ def crawl_domain_mogi_hcm():
     base_url = "https://mogi.vn"
 
     driver = get_chrome_driver()
-    page = 1
+    page = 10000
     while True:
         url = url_template.format(page=page)
 

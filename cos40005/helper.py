@@ -5,10 +5,7 @@ import re
 from elasticsearch import Elasticsearch
 import pandas as pd
 
-ES_USER = "elastic"
-ES_PASS = "PdG7HMGuF*bWvskIjojA"
-client = Elasticsearch("https://localhost:9200/", basic_auth=(ES_USER, ES_PASS), ca_certs="./http_ca.crt")
-
+client = Elasticsearch("https://localhost:9200/", basic_auth=("elastic", "txx7ce39UVrCvqcwL77f"), verify_certs=False)
 prefixes = {
     'street': ['pho', 'duong'],
     'ward': ['xa','phuong','thi tran'],
@@ -145,10 +142,11 @@ def create_data():
                             keepalives=1,
                             keepalives_idle=30,
                             keepalives_interval=10,
-                            keepalives_count=5)
+                            keepalives_count=5,
+                            )
     conn.autocommit = True
     cur = conn.cursor()
-    cur.execute("SET statement_timeout = 0;")
+    cur.execute("SET statement_timeout = 0")
     cur.execute(
         """
         SELECT * FROM cos40005_property 
@@ -185,7 +183,7 @@ def create_data():
     conn.close()
 
 
-create_data()
+# create_data()
 
 def clean_data():
     df = pd.DataFrame(pd.read_csv("./output.csv"))
@@ -195,10 +193,10 @@ def clean_data():
     df_filtered = df_filtered[df_filtered['is_rent'] == 0]
     df_filtered.to_csv('./output_cleaned.csv', index=False)
 
-clean_data()
+# clean_data()
 
 
 
-__all__ = ['normalise_price', 'normalise_address', 'normalise_area']
+# __all__ = ['normalise_price', 'normalise_address', 'normalise_area']
 
 

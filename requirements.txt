@@ -8,3 +8,4 @@ requests~=2.32.3
 cffi~=1.16.0
 elasticsearch~=8.13.2
 jupyter~=1.1.1
+pandas~=2.1.2

@@ -9,28 +9,28 @@ services:
     networks:
       - app-network
 
-  postgres:
-    image: postgres
-    container_name: postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin123
-      POSTGRES_DB: cos40005
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - app-network
+#  postgres:
+#    image: postgres
+#    container_name: postgres
+#    environment:
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: admin123
+#      POSTGRES_DB: cos40005
+#    ports:
+#      - "5432:5432"
+#    volumes:
+#      - postgres_data:/var/lib/postgresql/data
+#    networks:
+#      - app-network
 
-  rabbitmq:
-    image: rabbitmq
-    container_name: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"  # For RabbitMQ management interface
-    networks:
-      - app-network
+#  rabbitmq:
+#    image: rabbitmq
+#    container_name: rabbitmq
+#    ports:
+#      - "5672:5672"
+#      - "15672:15672"  # For RabbitMQ management interface
+#    networks:
+#      - app-network
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.15.2
