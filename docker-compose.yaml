@@ -41,8 +41,18 @@ services:
   elastic:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.15.2
     container_name: es01
+    volumes:
+      - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
     ports:
       - "9200:9200"
+
+  elastic2:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.2
+    container_name: es02
+    volumes:
+      - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+    ports:
+      - "9201:9201"
 
 networks:
   app-network:
