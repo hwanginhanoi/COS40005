@@ -6,7 +6,7 @@ from elasticsearch import Elasticsearch
 import pandas as pd
 
 ES_USER = "elastic"
-ES_PASS = "_YnyYSU1F5mv9esOU70a"
+ES_PASS = "PdG7HMGuF*bWvskIjojA"
 client = Elasticsearch("https://localhost:9200/", basic_auth=(ES_USER, ES_PASS), ca_certs="./http_ca.crt")
 
 prefixes = {
@@ -140,9 +140,15 @@ def create_data():
                             user="postgres.iteuczlaiijtvkpplsms",
                             host='aws-0-ap-southeast-1.pooler.supabase.com',
                             password="aUbEUkOgw23zCDdc",
-                            port=6543)
+                            port=6543,
+                            sslmode='require',
+                            keepalives=1,
+                            keepalives_idle=30,
+                            keepalives_interval=10,
+                            keepalives_count=5)
     conn.autocommit = True
     cur = conn.cursor()
+    cur.execute("SET statement_timeout = 0;")
     cur.execute(
         """
         SELECT * FROM cos40005_property 
@@ -193,6 +199,6 @@ clean_data()
 
 
 
-# __all__ = ['normalise_price', 'normalise_address', 'normalise_area']
+__all__ = ['normalise_price', 'normalise_address', 'normalise_area']
 
 
