@@ -1,5 +1,7 @@
+from urllib.parse import urljoin
+
 from celery import shared_task
-from .models import Property, Domain, Cache
+from .models import *
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -8,6 +10,7 @@ import redis
 import json
 import requests
 
+from .utils import get_chrome_driver
 
 r = redis.Redis(host='localhost', port=6379)
 
@@ -28,16 +31,7 @@ def crawl_domain():
 
     not_visited = Cache.objects.filter(visited=False)
     if not_visited and len(not_visited) > 0:
-        options = Options()
-        options.add_argument("--start-maximized")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--headless")
-        options.add_argument('--ignore-certificate-errors')
-        options.add_argument('--ignore-ssl-errors')
-        options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        options.add_experimental_option('useAutomationExtension', False)
-        driver = webdriver.Chrome(options=options)
+        driver = get_chrome_driver()
         for cache in not_visited:
             try:
                 driver.get(cache.url)
@@ -63,11 +57,80 @@ def crawl_domain():
 
 
 @shared_task
+def crawl_domain_mogi_hn():
+    domain = Domain.objects.get(name="mogi")
+
+    url_template = "https://mogi.vn/ho-chi-minh/mua-nha-dat?cp={page}"
+    base_url = "https://mogi.vn"
+
+    driver = get_chrome_driver()
+    page = 10000
+    while True:
+        url = url_template.format(page=page)
+
+        driver.get(url)
+
+        driver.implicitly_wait(10)
+
+        link_elements = driver.find_elements(By.CSS_SELECTOR, "a.link-overlay")
+
+        for link_element in link_elements:
+            href = link_element.get_attribute("href")
+            if href and (href.startswith(base_url) or href.startswith('/')):
+                full_url = urljoin(base_url, href)
+                try:
+                    new_cache = Cache(domain=domain, url=full_url, status=False, visited=True)
+                    new_cache.save()
+                except Exception as e:
+                    print(f"Error saving cache for {href}: {e}. Cache might be existed in the database")
+        page += 1
+
+    driver.quit()
+
+
+@shared_task
+def crawl_domain_mogi_hcm():
+    domain = Domain.objects.get(name="mogi")
+
+    url_template = "https://mogi.vn/ha-noi/mua-nha-dat?cp={page}"
+    base_url = "https://mogi.vn"
+
+    driver = get_chrome_driver()
+    page = 10000
+    while True:
+        url = url_template.format(page=page)
+
+        driver.get(url)
+
+        driver.implicitly_wait(10)
+
+        link_elements = driver.find_elements(By.CSS_SELECTOR, "a.link-overlay")
+
+        for link_element in link_elements:
+            href = link_element.get_attribute("href")
+            if href and (href.startswith(base_url) or href.startswith('/')):
+                full_url = urljoin(base_url, href)
+                try:
+                    new_cache = Cache(domain=domain, url=full_url, status=False, visited=True)
+                    new_cache.save()
+                    print(f"Saved cache for {full_url}")
+                except Exception as e:
+                    print(f"Error saving cache for {href}: {e}. Cache might be existed in the database")
+        page += 1
+
+    driver.quit()
+
+@shared_task
 def crawl_property(domain_names):
     domain_names = domain_names.split(',')
     for domain_name in domain_names:
         domain = Domain.objects.get(name=domain_name)
-        caches = Cache.objects.all().filter(domain=domain, status=False)
+
+        total_caches = Cache.objects.filter(domain=domain, status=False).count()
+        middle_index = total_caches // 2  # Integer division to get the middle index
+        # Get records from middle to end using offset
+        caches = Cache.objects.filter(domain=domain, status=False)[middle_index:]
+
 
         title_type = domain.title_type
         title_property = domain.title_property
@@ -106,7 +169,7 @@ def crawl_property(domain_names):
             options.add_argument('--ignore-ssl-errors')
             options.add_experimental_option("excludeSwitches", ["enable-automation"])
             options.add_experimental_option('useAutomationExtension', False)
-            driver = webdriver.Chrome(options=options)
+            driver = get_chrome_driver()
             for cache in caches:
                 driver.get(cache.url)
                 title = None
@@ -201,7 +264,14 @@ def call_api_extract():
         res = requests.get('http://localhost:9966?raw_data=' + toExtract['description'])
         res = res.json()
         property = Property.objects.get(id=toExtract['id'])
-
+        print(f"Property ID: {property.id}")
+        print(f"Address: {property.address}")
+        print(f"Area: {property.area} sq ft (or m²)")  # Adjust unit based on your location
+        print(f"Floor: {property.floor}")
+        print(f"Bedrooms: {property.bedroom}")
+        print(f"Contact: {property.contact}")
+        print(f"Bathrooms: {property.toilet} (assuming 'toilet' refers to bathrooms)")
+        print(f"Price: ${property.price}")  # Adjust currency symbol if needed
         try:
             if not property.address and res['address']['result']:
                 property.address = res['address']['result']
@@ -222,6 +292,15 @@ def call_api_extract():
         except Exception as e:
             print('Form not correct', e)
 
+        print("--------------------------------done")
+        print(f"Property ID: {property.id}")
+        print(f"Address: {property.address}")
+        print(f"Area: {property.area} sq ft (or m²)")  # Adjust unit based on your location
+        print(f"Floor: {property.floor}")
+        print(f"Bedrooms: {property.bedroom}")
+        print(f"Contact: {property.contact}")
+        print(f"Bathrooms: {property.toilet} (assuming 'toilet' refers to bathrooms)")
+        print(f"Price: ${property.price}")  # Adjust currency symbol if needed
         property.save()
     except Exception as ex:
         print('Extract failed', ex)

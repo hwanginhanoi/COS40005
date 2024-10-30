@@ -66,5 +66,5 @@ celery -A cos40005 beat -l INFO --scheduler django_celery_beat.schedulers:Databa
 7. Run Celery Worker
 ```Bash
 celery -A cos40005 worker -l info
-celery -A cos40005 worker --pool=threads --concurrency=5 --loglevel=info
+celery -A cos40005 worker --pool=threads --concurrency=1 --loglevel=info
 ```
