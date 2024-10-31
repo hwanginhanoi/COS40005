@@ -194,6 +194,7 @@ def clean_data():
     df_filtered.to_csv('./output_cleaned.csv', index=False)
 
 # clean_data()
+print("hello worlds")
 
 
 

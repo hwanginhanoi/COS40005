@@ -1,6 +1,6 @@
 from urllib.parse import urljoin
 
-from celery import shared_task
+from celery import shared_task, group
 from .models import *
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -64,10 +64,10 @@ def crawl_domain_mogi_hn():
     base_url = "https://mogi.vn"
 
     driver = get_chrome_driver()
-    page = 0 #thay start number cua m vao day
+    page = 5800 #thay start number cua m vao day
     while True:
         print("Current page number: ", page)
-        if page > 1000: #lay start_page + 1k, thay vao day
+        if page > 5804: #lay start_page + 1k, thay vao day
             break
         url = url_template.format(page=page)
 
@@ -133,8 +133,7 @@ def crawl_property(domain_names):
         total_caches = Cache.objects.filter(domain=domain, status=False).count()
         middle_index = total_caches // 2  # Integer division to get the middle index
         # Get records from middle to end using offset
-        caches = Cache.objects.filter(domain=domain, status=False)[middle_index:]
-
+        caches = Cache.objects.filter(domain=domain, status=False)[:200]
 
         title_type = domain.title_type
         title_property = domain.title_property
@@ -259,16 +258,19 @@ def crawl_property(domain_names):
 
             driver.quit()
 
+# Define the list of available ports
+PORTS = [9966, 9967, 9968, 9969, 9970]
 
 @shared_task
-def call_api_extract():
+def process_single_port(port, toExtract):
     try:
-        toExtract = r.lpop('extract_queue')
-        toExtract = json.loads(toExtract)
-        res = requests.get('http://localhost:9966?raw_data=' + toExtract['description'])
+        # Make API request to the specified port
+        res = requests.get(f'http://localhost:{port}?raw_data=' + toExtract['description'])
         res = res.json()
+
+        # Fetch the property from the database
         property = Property.objects.get(id=toExtract['id'])
-        print(f"Property ID: {property.id}")
+        print(f"Processing on port {port}: Property ID: {property.id}")
         print(f"Address: {property.address}")
         print(f"Area: {property.area} sq ft (or m²)")  # Adjust unit based on your location
         print(f"Floor: {property.floor}")
@@ -276,6 +278,8 @@ def call_api_extract():
         print(f"Contact: {property.contact}")
         print(f"Bathrooms: {property.toilet} (assuming 'toilet' refers to bathrooms)")
         print(f"Price: ${property.price}")  # Adjust currency symbol if needed
+
+        # Update property details based on the extracted data
         try:
             if not property.address and res['address']['result']:
                 property.address = res['address']['result']
@@ -295,7 +299,6 @@ def call_api_extract():
                 property.publish_date = res['publish_date']['result']
         except Exception as e:
             print('Form not correct', e)
-
         print("--------------------------------done")
         print(f"Property ID: {property.id}")
         print(f"Address: {property.address}")
@@ -305,6 +308,39 @@ def call_api_extract():
         print(f"Contact: {property.contact}")
         print(f"Bathrooms: {property.toilet} (assuming 'toilet' refers to bathrooms)")
         print(f"Price: ${property.price}")  # Adjust currency symbol if needed
+        # Save the updated property details
         property.save()
+
+        print(f"Property ID: {property.id} processing completed on port {port}.")
+
     except Exception as ex:
-        print('Extract failed', ex)
+        print(f'Extract failed on port {port}', ex)
+@shared_task
+def call_api_extract():
+    try:
+        # Pop 5 items from the Redis queue
+        items_to_extract = []
+        for _ in range(5):
+            toExtract = r.lpop('extract_queue')
+            if not toExtract:
+                print("No more items left in the queue. Stopping task.")
+                break
+            toExtract = json.loads(toExtract)
+            items_to_extract.append(toExtract)
+
+        # If no items were extracted, stop the task
+        if not items_to_extract:
+            print("No items to process.")
+            return
+
+        # Assign each item to a different port
+        tasks = []
+        for index, toExtract in enumerate(items_to_extract):
+            port = PORTS[index % len(PORTS)]  # Cycle through the ports
+            tasks.append(process_single_port.s(port, toExtract))
+
+        # Execute all tasks concurrently
+        group(tasks).apply_async()
+
+    except Exception as ex:
+        print('Main extract task failed', ex)
