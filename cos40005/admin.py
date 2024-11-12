@@ -1,5 +1,11 @@
 from .models import Domain, Property, Cache
 from django.contrib import admin
+from django.http import HttpResponse, FileResponse
+from django.urls import path
+from django.shortcuts import redirect
+import os
+from .models import DataExport
+from .helper import create_data, clean_data
 
 
 @admin.register(Domain)
@@ -62,3 +68,65 @@ class PropertyAdmin(admin.ModelAdmin):
     list_display = ('title', 'address', 'price', 'area', 'floor', 'bedroom', 'toilet', 'publish_date', 'contact', 'description')
     list_filter = ('domain', 'publish_date')
     search_fields = ('title', 'address', 'contact')
+
+@admin.register(DataExport)
+class DataExportAdmin(admin.ModelAdmin):
+    list_display = ('created_at', 'status')
+    actions = None
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('generate-csv/', self.generate_csv, name='generate-csv'),
+            path('download-csv/', self.download_csv, name='download-csv'),
+        ]
+        return custom_urls + urls
+
+    def generate_csv(self, request):
+        try:
+            # Create new export record
+            export = DataExport.objects.create(status='processing')
+
+            # Run your data generation functions
+            create_data()
+            clean_data()
+
+            # Update export status
+            export.status = 'completed'
+            export.file_path = './output_cleaned.csv'
+            export.save()
+
+            self.message_user(request, "CSV file generated successfully!")
+        except Exception as e:
+            self.message_user(request, f"Error generating CSV: {str(e)}", level='ERROR')
+
+        return redirect('admin:your_app_dataexport_changelist')
+
+    def download_csv(self, request):
+        try:
+            file_path = './output_cleaned.csv'
+            if os.path.exists(file_path):
+                response = FileResponse(
+                    open(file_path, 'rb'),
+                    content_type='text/csv'
+                )
+                response['Content-Disposition'] = 'attachment; filename="output_cleaned.csv"'
+                return response
+            else:
+                self.message_user(request, "CSV file not found. Generate it first.", level='ERROR')
+        except Exception as e:
+            self.message_user(request, f"Error downloading CSV: {str(e)}", level='ERROR')
+
+        return redirect('admin:your_app_dataexport_changelist')
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['show_generate_button'] = True
+        extra_context['show_download_button'] = os.path.exists('./output_cleaned.csv')
+        return super().changelist_view(request, extra_context=extra_context)

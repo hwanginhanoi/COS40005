@@ -1,11 +1,13 @@
 import string
-
 from cffi.backend_ctypes import unicode
 import re
 from elasticsearch import Elasticsearch
 import pandas as pd
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-client = Elasticsearch("https://localhost:9200/", basic_auth=("elastic", "txx7ce39UVrCvqcwL77f"), verify_certs=False)
+
+client = Elasticsearch("https://localhost:9200/", basic_auth=("elastic", "txx7ce39UVrCvqcwL77f"), ca_certs='./http_ca.crt',verify_certs=False)
 prefixes = {
     'street': ['pho', 'duong'],
     'ward': ['xa','phuong','thi tran'],

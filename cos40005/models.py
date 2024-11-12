@@ -143,3 +143,13 @@ class ExtractedProperty(models.Model):
 
     def __str__(self):
         return self.title
+
+class DataExport(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, default='pending')
+    file_path = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Data Export'
+        verbose_name_plural = 'Data Exports'
+
