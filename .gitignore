@@ -164,4 +164,3 @@ cython_debug/
 # Django #
 *.pyc
 media
-**/migrations/*
