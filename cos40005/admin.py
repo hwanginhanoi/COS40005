@@ -8,6 +8,8 @@ import os
 from .models import DataExport
 from .helper import create_data, clean_data
 
+from django_celery_beat.models import PeriodicTask, CrontabSchedule, IntervalSchedule, SolarSchedule, ClockedSchedule
+
 
 @admin.register(Domain)
 class DomainAdmin(admin.ModelAdmin):
@@ -133,7 +135,6 @@ class DataExportAdmin(admin.ModelAdmin):
         return super().changelist_view(request, extra_context=extra_context)
 
 class CustomAdminSite(admin.AdminSite):
-
     def get_urls(self):
         custom_urls = [
             path('some-custom-url/', self.admin_view(SomeCustomView.as_view(admin=self))),
@@ -144,5 +145,14 @@ class CustomAdminSite(admin.AdminSite):
 
 site = CustomAdminSite(name="my-fancy-url")
 admin.site = site
+
+site.register(Domain, DomainAdmin)
+site.register(Cache, CacheAdmin)
+site.register(Property, PropertyAdmin)
+site.register(DataExport, DataExportAdmin)
+
+site.register(PeriodicTask)
+site.register(CrontabSchedule)
+site.register(ClockedSchedule)
 
 # admin.register....your...modeladmin
