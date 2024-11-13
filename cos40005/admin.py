@@ -1,3 +1,4 @@
+from .custom_view import SomeCustomView
 from .models import Domain, Property, Cache
 from django.contrib import admin
 from django.http import HttpResponse, FileResponse
@@ -130,3 +131,18 @@ class DataExportAdmin(admin.ModelAdmin):
         extra_context['show_generate_button'] = True
         extra_context['show_download_button'] = os.path.exists('./output_cleaned.csv')
         return super().changelist_view(request, extra_context=extra_context)
+
+class CustomAdminSite(admin.AdminSite):
+
+    def get_urls(self):
+        custom_urls = [
+            path('some-custom-url/', self.admin_view(SomeCustomView.as_view(admin=self))),
+        ]
+        admin_urls = super().get_urls()
+        return custom_urls + admin_urls
+
+
+site = CustomAdminSite(name="my-fancy-url")
+admin.site = site
+
+# admin.register....your...modeladmin
