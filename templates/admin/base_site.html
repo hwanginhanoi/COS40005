@@ -1,0 +1,36 @@
+{% extends "admin/base_site.html" %}
+    {% block extrahead %}
+        <style>
+            .custom-button {
+                background-color: #007bff;
+                color: white;
+                padding: 10px 20px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 14px;
+                margin: 4px 2px;
+                cursor: pointer;
+                border: none;
+                border-radius: 4px;
+                margin-right: 40px;
+            }
+            .centered-link {
+
+        }
+        </style>
+         <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const linkContainer = document.querySelector('a[href="/admin/"]').parentElement;
+            linkContainer.style.display = 'flex';
+            linkContainer.style.justifyContent = 'center';
+            linkContainer.style.alignItems = 'center';
+            linkContainer.style.paddingLeft = '30'
+});
+    </script>
+    {% endblock %}
+    {% block branding %}
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Logo_of_Swinburne_University_of_Technology.svg/1280px-Logo_of_Swinburne_University_of_Technology.svg.png" alt="logo" style="width: 90px; height: auto; margin-right: 20px">
+        <a href="{% url 'admin:dataexport' %}" class="custom-button">Data Export</a>
+        {{ block.super }}
+    {% endblock %}

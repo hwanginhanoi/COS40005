@@ -7,4 +7,4 @@ class SomeCustomView(ListView):
 
     def get(self, request):
         ctx = self.admin.each_context(request)
-        return render(request, 'admin/somecustomview.html', ctx)
+        return render(request, 'admin/dataexport.html', ctx)

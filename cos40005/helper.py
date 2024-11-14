@@ -200,6 +200,6 @@ print("hello worlds")
 
 
 
-# __all__ = ['normalise_price', 'normalise_address', 'normalise_area']
+__all__ = ['normalise_price', 'normalise_address', 'normalise_area']
 
 

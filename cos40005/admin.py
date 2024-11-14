@@ -135,9 +135,13 @@ class DataExportAdmin(admin.ModelAdmin):
         return super().changelist_view(request, extra_context=extra_context)
 
 class CustomAdminSite(admin.AdminSite):
+    site_header = "COS40005 Crawling Admin"
+    site_title = "Admin Portal"
+    index_title = "Welcome to the COS40005 Admin Portal"
+
     def get_urls(self):
         custom_urls = [
-            path('some-custom-url/', self.admin_view(SomeCustomView.as_view(admin=self))),
+            path('dataexport/', self.admin_view(SomeCustomView.as_view(admin=self)), name='dataexport'),
         ]
         admin_urls = super().get_urls()
         return custom_urls + admin_urls
