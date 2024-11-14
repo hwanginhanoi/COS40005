@@ -1,7 +1,230 @@
-<!-- templates/admin/custom_page.html -->
 {% extends "admin/base_site.html" %}
 
 {% block content %}
-<h1>Custom Admin Page</h1>
-<p>This is a custom admin page.</p>
+<h1>Data Exporting Tool</h1>
+<form id="dataForm">
+    {% csrf_token %}
+    <div class="form-row">
+        <label for="username">Elasticsearch Username:</label>
+        <input type="text" id="username" name="username" class="vTextField" required>
+    </div>
+    <div class="form-row">
+        <label for="password">Elasticsearch Password:</label>
+        <input type="password" id="password" name="password" class="vTextField" required>
+    </div>
+    <div class="form-row">
+        <button type="button" class="custom-button" onclick="submitForm('load')">Load Address Data</button>
+        <span id="loadMessage" class="finish-message"></span>
+    </div>
+    <div class="form-row">
+        <button type="button" class="custom-button" onclick="submitForm('normalize')">Export Data (Time consuming task)</button>
+        <span id="normalizeMessage" class="finish-message"></span>
+    </div>
+    <div id="loading" class="loading-spinner" style="display: none;"></div>
+</form>
+<h1>Prediction Tool</h1>
+<form id="predictionForm">
+        <div class="form-row">
+            <label for="area">Area (in square meters):</label>
+            <input type="number" id="area" name="area" step="0.01" required>
+        </div>
+        <div class="form-row">
+            <label for="province">Province:</label>
+            <select id="province" name="province" required>
+                <option value="">Select a province</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="district">District:</label>
+            <select id="district" name="district" required disabled>
+                <option value="">Select a district</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="ward">Ward:</label>
+            <select id="ward" name="ward" required disabled>
+                <option value="">Select a ward</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="floor">Floor:</label>
+            <input type="number" id="floor" name="floor" required>
+        </div>
+        <div class="form-row">
+            <label for="bedroom">Bedroom:</label>
+            <input type="number" id="bedroom" name="bedroom" required>
+        </div>
+        <div class="form-row">
+            <label for="toilet">Toilet:</label>
+            <input type="number" id="toilet" name="toilet" required>
+        </div>
+        <button type="button" class="custom-button" onclick="submitPrediction()">Predict Price</button>
+    </form>
+    <div id="result"></div>
+<style>
+    label {
+        margin-right: 20px; 
+    }
+    
+    .form-row {
+        margin-bottom: 15px;
+    }
+    .loading-spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 2s linear infinite;
+        margin: 20px auto;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .finish-message {
+        color: green;
+        margin-left: 10px;
+    }
+</style>
+
+{% load static %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const provinceSelect = document.getElementById('province');
+        const districtSelect = document.getElementById('district');
+        const wardSelect = document.getElementById('ward');
+
+        fetch("{% static '/tinh_tp.json' %}")
+            .then(response => response.json())
+            .then(data => {
+                for (const code in data) {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = data[code].name_with_type;
+                    provinceSelect.appendChild(option);
+                }
+            })
+            .catch(error => console.error('Error fetching province data:', error));
+
+        let districtsData = {};
+        fetch("{% static '/quan_huyen.json' %}")
+            .then(response => response.json())
+            .then(data => {
+                districtsData = data;
+            })
+            .catch(error => console.error('Error fetching district data:', error));
+
+        let wardsData = {};
+        fetch("{% static '/xa_phuong.json' %}")
+            .then(response => response.json())
+            .then(data => {
+                wardsData = data;
+            })
+            .catch(error => console.error('Error fetching ward data:', error));
+
+        provinceSelect.addEventListener('change', function() {
+            const selectedProvinceId = provinceSelect.value;
+            districtSelect.innerHTML = '<option value="">Select a district</option>'; 
+            wardSelect.innerHTML = '<option value="">Select a ward</option>'; 
+
+            if (selectedProvinceId) {
+                districtSelect.disabled = false;
+            } else {
+                districtSelect.disabled = true;
+                wardSelect.disabled = true;
+            }
+
+            for (const code in districtsData) {
+                if (districtsData[code].parent_code === selectedProvinceId) {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = districtsData[code].name_with_type;
+                    districtSelect.appendChild(option);
+                }
+            }
+        });
+
+        districtSelect.addEventListener('change', function() {
+            const selectedDistrictId = districtSelect.value;
+            wardSelect.innerHTML = '<option value="">Select a ward</option>'; 
+
+            if (selectedDistrictId) {
+                wardSelect.disabled = false;
+            } else {
+                wardSelect.disabled = true;
+            }
+
+            for (const code in wardsData) {
+                if (wardsData[code].parent_code === selectedDistrictId) {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = wardsData[code].name_with_type;
+                    wardSelect.appendChild(option);
+                }
+            }
+        });
+    });
+
+    function submitForm(flag) {
+        const form = document.getElementById('dataForm');
+        const formData = new FormData(form);
+        formData.append('flag', flag);
+
+        document.getElementById('loading').style.display = 'block';
+
+        fetch('/api/load_data_address/', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.ok) {
+                return flag === 'normalize' ? response.blob() : response.json();
+            } else {
+                return response.json().then(data => {
+                    throw new Error(data.message);
+                });
+            }
+        })
+        .then(data => {
+            if (flag === 'normalize') {
+                const url = window.URL.createObjectURL(data);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'output_cleaned.csv';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.getElementById('normalizeMessage').textContent = 'File downloaded successfully';
+            } else {
+                document.getElementById('loadMessage').textContent = data.message;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            const messageElement = flag === 'load' ? document.getElementById('loadMessage') : document.getElementById('normalizeMessage');
+            messageElement.textContent = error.message;
+        })
+        .finally(() => {
+            document.getElementById('loading').style.display = 'none';
+        });
+    }
+    async function submitPrediction() {
+            const form = document.getElementById('predictionForm');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            const response = await fetch('http://localhost:8899/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            document.getElementById('result').textContent = `Predicted Price: ${result.predicted_price}`;
+        }
+</script>
 {% endblock %}
