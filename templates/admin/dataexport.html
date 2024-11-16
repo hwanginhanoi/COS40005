@@ -61,11 +61,26 @@
         <button type="button" class="custom-button" onclick="submitPrediction()">Predict Price</button>
     </form>
     <div id="result"></div>
+    <br>
+    <h1>Data Analysis & Visualization</h1>
+    <div id="dataTable"></div>
+    <h1>Outlier Removal</h1>
+    <button type="button" class="custom-button" onclick="fetchOutlierData()">Remove Outliers</button>
+    <div id="outlierResults"></div>
+    <h1>Price Distribution</h1>
+    <button type="button" class="custom-button" onclick="fetchPriceDistributionData()">Price distribution</button>
+    <div id="priceDistribution"></div>
+    <h1>Province Distribution</h1>
+    <button type="button" class="custom-button" onclick="fetchProvinceDistributionData()">Price distribution</button>
+    <div id="provinceDistribution"></div>
+    <h1>Correlation Matrix</h1>
+    <button type="button" class="custom-button" onclick="fetchCorrelation()">Price distribution</button>
+    <div id="correlation"></div>
 <style>
     label {
-        margin-right: 20px; 
+        margin-right: 20px;
     }
-    
+
     .form-row {
         margin-bottom: 15px;
     }
@@ -90,6 +105,49 @@
 
 {% load static %}
 <script>
+    function fetchOutlierData() {
+            fetch('http://localhost:8000/api/data_analysis/remove_outlier')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('outlierResults').innerHTML = data;
+                })
+                .catch(error => console.error('Error fetching outlier data:', error));
+        }
+
+    function fetchPriceDistributionData() {
+        fetch('http://localhost:8000/api/data_analysis/price_distribution')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('priceDistribution').innerHTML = data;
+            })
+            .catch(error => console.error('Error fetching price data:', error));
+    }
+    
+    function fetchProvinceDistributionData() {
+        fetch('http://localhost:8000/api/data_analysis/province_distribution')
+           .then(response => response.text())
+            .then(data => {
+                document.getElementById('correlation').innerHTML = data;
+            })
+            .catch(error => console.error('Error fetching data:', error));
+    }
+    
+    function fetchCorrelation() {
+        fetch('http://localhost:8000/api/data_analysis/correlation')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('provinceDistribution').innerHTML = data;
+            })
+            .catch(error => console.error('Error fetching province data:', error));
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('http://localhost:8000/api/data_analysis/summerize')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('dataTable').innerHTML = data;
+            })
+            .catch(error => console.error('Error fetching data:', error));
+    });
     document.addEventListener('DOMContentLoaded', function() {
         const provinceSelect = document.getElementById('province');
         const districtSelect = document.getElementById('district');
@@ -125,8 +183,8 @@
 
         provinceSelect.addEventListener('change', function() {
             const selectedProvinceId = provinceSelect.value;
-            districtSelect.innerHTML = '<option value="">Select a district</option>'; 
-            wardSelect.innerHTML = '<option value="">Select a ward</option>'; 
+            districtSelect.innerHTML = '<option value="">Select a district</option>';
+            wardSelect.innerHTML = '<option value="">Select a ward</option>';
 
             if (selectedProvinceId) {
                 districtSelect.disabled = false;
@@ -147,7 +205,7 @@
 
         districtSelect.addEventListener('change', function() {
             const selectedDistrictId = districtSelect.value;
-            wardSelect.innerHTML = '<option value="">Select a ward</option>'; 
+            wardSelect.innerHTML = '<option value="">Select a ward</option>';
 
             if (selectedDistrictId) {
                 wardSelect.disabled = false;

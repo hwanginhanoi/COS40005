@@ -2,9 +2,14 @@ import json
 import os
 
 from django.http import FileResponse
+from django.shortcuts import render
+from django.templatetags.static import static
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 
 import string
 import re
@@ -274,3 +279,139 @@ class API(APIView):
             return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(data, status=status.HTTP_200_OK)
+
+
+def remove_outliers_iqr(data, column, iterations=30):
+    # Create a copy of the entire dataframe
+    df = data.copy()
+    original_size = len(df)
+    removed_count = 0
+
+    for i in range(iterations):
+        # Calculate IQR
+        Q1 = df[column].quantile(0.25)
+        Q3 = df[column].quantile(0.75)
+        IQR = Q3 - Q1
+
+        # Calculate bounds
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+
+        # Count points to be removed in this iteration
+        outliers_mask = (df[column] < lower_bound) | (df[column] > upper_bound)
+        iteration_removed = outliers_mask.sum()
+
+        # If no outliers found, break the loop
+        if iteration_removed == 0:
+            break
+
+        # Remove outliers while keeping all columns
+        df = df.loc[(df[column] >= lower_bound) & (df[column] <= upper_bound), :]
+        removed_count += iteration_removed
+
+    # Prepare statistics
+    stats = {
+        'original_count': original_size,
+        'final_count': len(df),
+        'removed_count': removed_count,
+        'removal_percentage': (removed_count / original_size) * 100,
+        'iterations_used': i + 1,
+        'final_columns': list(df.columns)
+    }
+
+    return df, stats
+
+
+def plot_before_after(original_data, cleaned_data, column, figsize=(12, 5)):
+    plt.figure(figsize=figsize)
+    plt.subplot(1, 2, 1)
+    plt.boxplot(original_data[column], vert=False)
+    plt.title('Before Outlier Removal')
+    plt.xlabel(column)
+    plt.tight_layout()
+    plt.savefig('./data_address/before_outlier_removal.png')
+    plt.subplot(1, 2, 2)
+    plt.boxplot(cleaned_data[column], vert=False)
+    plt.title('After Outlier Removal')
+    plt.xlabel(column)
+    plt.tight_layout()
+    plt.savefig('./data_address/after_outlier_removal.png')
+
+    return './data_address/before_outlier_removal.png', './data_address/after_outlier_removal.png'
+
+def plot_categorical_distribution(data, column):
+    value_counts = data[column].value_counts()  # Count occurrences of each category
+    plt.bar(value_counts.index, value_counts.values)
+    plt.title(f'Distribution of {column}')
+    plt.xlabel(column)
+    plt.ylabel('Count')
+    plt.xticks(rotation=90)
+    plt.savefig('./data_address/province_distribution.png')
+
+class Summarize(APIView):
+    def get(self, request):
+        df = pd.read_csv("./output_cleaned.csv")
+        data = df.describe().to_html().replace('\n','')
+        return Response(data, status=200, content_type='text/html')
+
+class RemoveOutlier(APIView):
+    def get(self, request):
+        df = pd.read_csv("./output_cleaned.csv")
+        df = df[df['area'] >= 0][['price', 'area', 'province', 'district', 'ward', 'floor', 'bedroom', 'toilet']]
+        cleaned_df, stats = remove_outliers_iqr(df, 'price', iterations=20)
+
+        plot_before_after(df, cleaned_df, 'price')
+
+        context = {
+            "original_columns": list(df.columns),
+            "final_columns": stats['final_columns'],
+            "original_count": stats['original_count'],
+            "final_count": stats['final_count'],
+            "removed_count": stats['removed_count'],
+            "removal_percentage": stats['removal_percentage'],
+            "iterations_used": stats['iterations_used'],
+            "before_image_path": static('before_outlier_removal.png'),
+            "after_image_path": static('after_outlier_removal.png')
+        }
+
+        return render(request, "remove_outlier.html", context)
+
+class PriceDistribute(APIView):
+    def get(self, request):
+        df = pd.read_csv("./output_cleaned.csv")
+        plt.hist(df['price'], bins=100)
+        plt.title('Price Distribution')
+        plt.xlabel('Price')
+        plt.ylabel('Frequency')
+        plt.savefig('./data_address/price_distribution.png')
+
+        context = {
+            "price_distribution_path": static('price_distribution.png')
+        }
+        return render(request, "price_distribution.html", context)
+
+class ProvinceDistribute(APIView):
+    def get(self, request):
+        df = pd.read_csv("./output_cleaned.csv")
+        df = df[df['area'] >= 0][['price', 'area', 'province', 'district', 'ward', 'floor', 'bedroom', 'toilet']]
+        plot_categorical_distribution(df, 'province')
+
+        context = {
+            "province_distribution_path": static('province_distribution.png')
+        }
+        return render(request, "province_distribution.html", context)
+
+class CorrelationMatrix(APIView):
+    def get(self, request):
+        df = pd.read_csv("./output_cleaned.csv")
+        df = df[df['area'] >= 0][['price', 'area', 'province', 'district', 'ward', 'floor', 'bedroom', 'toilet']]
+        corr = df.corr()
+        plt.figure(figsize=(10, 8))
+        sns.heatmap(corr, annot=True, cmap='coolwarm', fmt=".2f")
+        plt.title('Correlation Matrix')
+        plt.savefig('./data_address/correlation_matrix.png')
+
+        context = {
+            "correlation_matrix_path": static('correlation_matrix.png')
+        }
+        return render(request, "correlation_matrix.html", context)

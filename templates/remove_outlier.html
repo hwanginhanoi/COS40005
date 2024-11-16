@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <p>Original columns: {{ original_columns }}</p>
+    <p>Columns after cleaning: {{ final_columns }}</p>
+    <p>Original data points: {{ original_count }}</p>
+    <p>Points after cleaning: {{ final_count }}</p>
+    <p>Removed {{ removed_count }} points ({{ removal_percentage }}%)</p>
+    <p>Required {{ iterations_used }} iterations</p>
+    <h3>Before Outlier Removal</h3>
+    <img src="{{ before_image_path }}" alt="Before Outlier Removal">
+    <h3>After Outlier Removal</h3>
+    <img src="{{ after_image_path }}" alt="After Outlier Removal">
+</body>
+</html>
