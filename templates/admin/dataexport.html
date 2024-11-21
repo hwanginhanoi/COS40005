@@ -71,10 +71,10 @@
     <button type="button" class="custom-button" onclick="fetchPriceDistributionData()">Price distribution</button>
     <div id="priceDistribution"></div>
     <h1>Province Distribution</h1>
-    <button type="button" class="custom-button" onclick="fetchProvinceDistributionData()">Price distribution</button>
+    <button type="button" class="custom-button" onclick="fetchProvinceDistributionData()">Province distribution</button>
     <div id="provinceDistribution"></div>
     <h1>Correlation Matrix</h1>
-    <button type="button" class="custom-button" onclick="fetchCorrelation()">Price distribution</button>
+    <button type="button" class="custom-button" onclick="fetchCorrelation()">Correlation Matrix</button>
     <div id="correlation"></div>
 <style>
     label {
@@ -127,7 +127,7 @@
         fetch('http://localhost:8000/api/data_analysis/province_distribution')
            .then(response => response.text())
             .then(data => {
-                document.getElementById('correlation').innerHTML = data;
+                document.getElementById('provinceDistribution').innerHTML = data;
             })
             .catch(error => console.error('Error fetching data:', error));
     }
@@ -136,7 +136,7 @@
         fetch('http://localhost:8000/api/data_analysis/correlation')
             .then(response => response.text())
             .then(data => {
-                document.getElementById('provinceDistribution').innerHTML = data;
+                document.getElementById('correlation').innerHTML = data;
             })
             .catch(error => console.error('Error fetching province data:', error));
     }
@@ -271,6 +271,7 @@
     async function submitPrediction() {
             const form = document.getElementById('predictionForm');
             const formData = new FormData(form);
+            console.log(formData);
             const data = Object.fromEntries(formData.entries());
 
             const response = await fetch('http://localhost:8899/predict', {
@@ -282,7 +283,8 @@
             });
 
             const result = await response.json();
-            document.getElementById('result').textContent = `Predicted Price: ${result.predicted_price}`;
+            {#document.getElementById('result').textContent = `Predicted Price: ${result.predicted_price}`;#}
+            document.getElementById('result').textContent = `Predicted Price: ${result.predicted_price.toLocaleString()}`;
         }
 </script>
 {% endblock %}
