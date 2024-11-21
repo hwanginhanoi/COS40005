@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework import status
 import seaborn as sns
 import matplotlib.pyplot as plt
-
+plt.switch_backend("Agg")
 
 import string
 import re
