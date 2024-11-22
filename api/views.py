@@ -350,13 +350,13 @@ def plot_categorical_distribution(data, column):
 
 class Summarize(APIView):
     def get(self, request):
-        df = pd.read_csv("./output_cleaned.csv")
+        df = pd.read_csv("./final_data.csv")
         data = df.describe().to_html().replace('\n','')
         return Response(data, status=200, content_type='text/html')
 
 class RemoveOutlier(APIView):
     def get(self, request):
-        df = pd.read_csv("./output_cleaned.csv")
+        df = pd.read_csv("./final_data.csv")
         df = df[df['area'] >= 0][['price', 'area', 'province', 'district', 'ward', 'floor', 'bedroom', 'toilet']]
         cleaned_df, stats = remove_outliers_iqr(df, 'price', iterations=20)
 
@@ -378,7 +378,7 @@ class RemoveOutlier(APIView):
 
 class PriceDistribute(APIView):
     def get(self, request):
-        df = pd.read_csv("./output_cleaned.csv")
+        df = pd.read_csv("./final_data.csv")
         plt.hist(df['price'], bins=100)
         plt.title('Price Distribution')
         plt.xlabel('Price')
@@ -392,7 +392,7 @@ class PriceDistribute(APIView):
 
 class ProvinceDistribute(APIView):
     def get(self, request):
-        df = pd.read_csv("./output_cleaned.csv")
+        df = pd.read_csv("./final_data.csv")
         df = df[df['area'] >= 0][['price', 'area', 'province', 'district', 'ward', 'floor', 'bedroom', 'toilet']]
         plot_categorical_distribution(df, 'province')
 
@@ -403,7 +403,7 @@ class ProvinceDistribute(APIView):
 
 class CorrelationMatrix(APIView):
     def get(self, request):
-        df = pd.read_csv("./output_cleaned.csv")
+        df = pd.read_csv("./final_data.csv")
         df = df[df['area'] >= 0][['price', 'area', 'province', 'district', 'ward', 'floor', 'bedroom', 'toilet']]
         corr = df.corr()
         plt.figure(figsize=(10, 8))
